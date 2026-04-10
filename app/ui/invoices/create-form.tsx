@@ -11,9 +11,8 @@ import { createInvoice } from '@/app/lib/actions'; //* 서버 액션 함수 가�
 
 export default function Form({ customers }: { customers: CustomerField[] }) {
   return (
-    // 서버 액션 함수 호출
+    //* 서버 액션 함수 호출 > 폼 데이터를 서버 액션 함수에 전달
     <form action={createInvoice}>
-      {/* 폼 데이터를 서버 액션 함수에 전달 */}
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* Customer Name */}
         <div className="mb-4">

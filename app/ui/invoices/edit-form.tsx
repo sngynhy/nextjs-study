@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { Button } from '@/app/ui/button';
+import { updateInvoice } from '@/app/lib/actions';
 
 export default function EditInvoiceForm({
   invoice,
@@ -17,8 +18,15 @@ export default function EditInvoiceForm({
   invoice: InvoiceForm;
   customers: CustomerField[];
 }) {
+
+  //* 서버 액션에 id값 전달을 위해 bind() 메서드 사용
+  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+  // bind() 메서드는 함수의 this 값을 지정하고, 인수를 미리 전달할 수 있음
+  // 이 경우 updateInvoice 함수의 this 값을 null로 지정하고, invoice.id 값을 미리 첫 번쨰 인수로 전달
+
   return (
-    <form>
+    //* 서버 액션 함수 호출 > 폼 데이터를 서버 액션 함수에 전달
+    <form action={updateInvoiceWithId}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* Customer Name */}
         <div className="mb-4">
