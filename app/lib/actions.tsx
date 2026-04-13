@@ -10,9 +10,14 @@ const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' })
 //* 데이터 스키마 정의
 const FormSchema = z.object({
   id: z.string(),
-  customerId: z.string(),
-  amount: z.coerce.number(), // coerce: 데이터 타입 변환 > 숫자형으로
-  status: z.enum(['pending', 'paid']),
+  customerId: z.string({
+    invalid_type_error: 'Please select a customer.', // 데이터 타입 오류 메시지
+  }),
+  // coerce: 데이터 타입 변환 > 숫자형으로, gt: greater than > 0보다 큰 값이어야 함
+  amount: z.coerce.number().gt(0, { message: 'Please enter an amount greater than 0.' }),
+  status: z.enum(['pending', 'paid'], {
+    invalid_type_error: 'Please select an invoice status.', // 데이터 타입 오류 메시지
+  }),
   date: z.string(),
 })
 
@@ -20,11 +25,20 @@ const FormSchema = z.object({
 const CreateInvoice = FormSchema.omit({ id: true, date: true })
 // id, date는 클라이언트가 입력하지 않으므로 제외 > 서버 액션에서 생성
 
+export type State = {
+  errors?: {
+    customerId?: string[]; // 필수 필드 오류 메시지
+    amount?: string[]; // 필수 필드 오류 메시지
+    status?: string[]; // 필수 필드 오류 메시지
+  };
+  message?: string | null; // 성공 메시지 또는 오류 메시지
+};
+
 //* 서버 액션 함수 생성 > 생성 액션
 // <server> 태그 추가 시 'use server' 파일 내의 모든 export 함수가 서버 액션으로 표시되고,
 // 해당 서버 함수는 클라이언트 및 서버 구성 요소에서 가져와 사용 가능
 // 이 파일에 포함된 함수 중 사용되지 않는 함수는 최종 앱 번들에서 자동으로 제거됨
-export async function createInvoice(formData: FormData) {
+export async function createInvoice(prevState: State, formData: FormData): Promise<State> {
   // form data를 객체로 변환
   // const rawFormData = {
   //     customerId: formData.get('customerId'),
@@ -39,16 +53,33 @@ export async function createInvoice(formData: FormData) {
   // CreateInvoice.parse(...)는 전달된 객체를 검증/변환
   // 검증 성공 시 각 필드의 값을 추출
   // 검증 실패 시 parse는 즉시 예외를 던짐
-  const { customerId, amount, status } = CreateInvoice.parse({
+  // const { customerId, amount, status } = CreateInvoice.parse({
+  //   customerId: formData.get('customerId'),
+  //   amount: formData.get('amount'),
+  //   status: formData.get('status'),
+  // })
+
+  const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
     status: formData.get('status'),
   })
 
+  // 검증 실패 시 오류 메시지 반환
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+       message: 'Missing Fields. Failed to Create Invoice.',
+    }
+  }
+
+  // 검증 성공 시 데이터 추출
+  const { customerId, amount, status } = validatedFields.data;
   // 데이터 가공
   const amountInCents = amount * 100 // 달러를 센트로 변환
   const date = new Date().toISOString().split('T')[0] // 송장 생성 날짜 (YYYY-MM-DD)
 
+  //* 폼 유효성 검사를 try/catch 블록 외부에서 처리 > 오류 처리 용이
   try {
     // DB에 데이터 삽입
     await sql`
