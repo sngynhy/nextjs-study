@@ -243,3 +243,22 @@ useActionState(reducerAction, initialState, permalink?): React Hook으로, actio
 서버에서 폼 유효성 검사 시 얻을 수 있는 이점
 - 데이터를 DB로 전송하기 전 타입 검증 가능
 - 악의적인 사용자가 클라이언트 측 유효성 검사를 우회할 위험을 줄임
+
+### 인증
+#### NextAuth.js
+Next.js 앱에서 통합된 인증 솔루션 제공 > 세션 관리, 로그인/로그아웃, 기타 인증 관련 복잡한 부분을 추상화하여 처리
+```
+# 1. 라이브러리 설치 
+pnpm i next-auth@beta
+
+# 2. 비밀키 생성 > 해당 키는 쿠키를 암호화 하여 사용자 세션의 보안을 유지하는 데 사용됨
+# macOS
+openssl rand -base64 32
+# Windows can use https://generate-secret.vercel.app/32
+
+# 3. .env 파일에 비밀키 추가
+AUTH_SECRET=
+## 실제 운영 환경에서 동작하려면 Vercel 프로젝트의 환경 변수 업데이트 필요 > 참고) https://vercel.com/docs/environment-variables
+
+# 4. root 경로에 auth.config.ts 파일 생성 > NextAuth.js의 구성 옵션 설정
+```
